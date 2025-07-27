@@ -122,7 +122,7 @@ class UserService {
       password: credentials.password,
     };
     const result = await this.makeRequest<{ user: UserProfile; token: string }>(
-      "/login/",
+      "/api/login/",
       "POST",
       payload
     );
@@ -168,7 +168,7 @@ class UserService {
       referral_code: userData.referralCode || userData.referral_code || "",
     };
     
-    const result = await this.makeRequest<any>("/register/", "POST", payload);
+    const result = await this.makeRequest<any>("/api/register/", "POST", payload);
     
     if (result.success && result.data) {
       // Handle new response format with access token
@@ -242,7 +242,7 @@ class UserService {
     if (!this.getToken()) {
       return { success: false, error: "Authentication required" };
     }
-    return this.makeRequest<UserProfile>("/profile");
+    return this.makeRequest<UserProfile>("/api/profile/");
   }
 
   async updateProfile(
