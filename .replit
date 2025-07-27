@@ -30,3 +30,12 @@ mode = "sequential"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "cd backend && python manage.py runserver 0.0.0.0:8000"
+
+[[workflows.workflow]]
+name = "Frontend React"
+author = 42802080
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd frontend && npm start"

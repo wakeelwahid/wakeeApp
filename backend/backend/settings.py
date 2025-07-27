@@ -54,6 +54,10 @@ MIDDLEWARE = [
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://a7076cf2-2cac-4495-86e4-7644ab38a51c-00-34az9cfua5zkt.pike.replit.dev",
+]
 
 ROOT_URLCONF = 'backend.urls'
 
