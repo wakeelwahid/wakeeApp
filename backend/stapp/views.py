@@ -60,6 +60,10 @@ def register_user(request):
             if User.objects.filter(mobile=mobile).exists():
                 return JsonResponse({'error': 'Mobile number already exists'}, status=400)
 
+            # Validate referral code if provided
+            if referral_code and not User.objects.filter(referral_code=referral_code).exists():
+                return JsonResponse({'error': 'Invalid referral code'}, status=400)
+
             # Generate unique referral code for new user
             new_referral_code = generate_referral_code(username, mobile)
 
@@ -80,9 +84,21 @@ def register_user(request):
             # Create wallet for user
             Wallet.objects.create(user=user)
 
+            # Generate JWT tokens for immediate login
+            refresh = RefreshToken.for_user(user)
+            access_token = refresh.access_token
+
             return JsonResponse({
                 'message': 'User registered successfully',
-                'referral_code': new_referral_code
+                'access': str(access_token),
+                'refresh': str(refresh),
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'mobile': user.mobile,
+                    'email': user.email,
+                    'referral_code': user.referral_code
+                }
             }, status=201)
 
         except json.JSONDecodeError:

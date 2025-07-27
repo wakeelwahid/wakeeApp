@@ -167,28 +167,35 @@ class UserService {
         userData.password,
       referral_code: userData.referralCode || userData.referral_code || "",
     };
-    const result = await this.makeRequest<{ user: UserProfile; token: string }>(
-      "/register/",
-      "POST",
-      payload
-    );
+    
+    const result = await this.makeRequest<any>("/register/", "POST", payload);
+    
     if (result.success && result.data) {
-      await this.setToken(result.data.token);
-      // Store user data for later use
-      if (typeof window !== "undefined" && window.localStorage) {
-        localStorage.setItem("user_data", JSON.stringify(result.data.user));
-      }
-      if (typeof require !== "undefined") {
-        try {
-          const AsyncStorage =
-            require("@react-native-async-storage/async-storage").default;
-          await AsyncStorage.setItem(
-            "user_data",
-            JSON.stringify(result.data.user)
-          );
-        } catch {}
+      // Handle new response format with access token
+      const token = result.data.access || result.data.token;
+      const user = result.data.user;
+      
+      if (token && user) {
+        await this.setToken(token);
+        // Store user data for later use
+        if (typeof window !== "undefined" && window.localStorage) {
+          localStorage.setItem("user_data", JSON.stringify(user));
+        }
+        if (typeof require !== "undefined") {
+          try {
+            const AsyncStorage =
+              require("@react-native-async-storage/async-storage").default;
+            await AsyncStorage.setItem("user_data", JSON.stringify(user));
+          } catch {}
+        }
+        
+        return {
+          success: true,
+          data: { user, token }
+        };
       }
     }
+    
     return result;
   }
 

@@ -70,27 +70,56 @@ export default function AuthScreen({
   });
 
   const handleLogin = async () => {
+    // Validation
+    if (!loginData.phone || !loginData.password) {
+      Alert.alert("❌ Error", "कृपया सभी fields भरें");
+      return;
+    }
+
+    if (loginData.phone.length !== 10) {
+      Alert.alert("❌ Error", "कृपया valid 10 digit mobile number डालें");
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await login(loginData);
 
       if (result.success && result.user) {
-        // First close the modal
-        onClose();
-        // Then trigger auth success which should redirect to home
-        setTimeout(() => {
-          onAuthSuccess(result.user);
-        }, 100);
-      } else {
+        // Show success message
         Alert.alert(
-          "❌ Login Error",
-          result.error || "Login failed. Please try again."
+          "✅ Login Successful!",
+          `Welcome back, ${result.user.username || result.user.name}! 🎉`,
+          [
+            {
+              text: "Continue",
+              onPress: () => {
+                // First close the modal
+                onClose();
+                // Then trigger auth success which should redirect to home
+                setTimeout(() => {
+                  onAuthSuccess(result.user);
+                }, 100);
+              }
+            }
+          ]
         );
+      } else {
+        // Handle specific error messages
+        let errorMessage = result.error || "Login failed. Please try again.";
+        
+        if (errorMessage.includes("Invalid mobile number or password")) {
+          errorMessage = "❌ Invalid credentials!\nMobile number या password गलत है।";
+        } else if (errorMessage.includes("blocked")) {
+          errorMessage = "❌ Account Blocked!\nआपका account admin द्वारा block कर दिया गया है।";
+        }
+        
+        Alert.alert("❌ Login Failed", errorMessage);
       }
     } catch (error) {
       Alert.alert(
-        "❌ Error",
-        "Network error. कृपया अपना internet connection check करें।"
+        "❌ Network Error",
+        "Connection failed! कृपया अपना internet connection check करें।"
       );
     } finally {
       setLoading(false);
@@ -98,28 +127,44 @@ export default function AuthScreen({
   };
 
   const handleRegister = async () => {
+    // Validation
     if (
       !registerData.name ||
       !registerData.phone ||
       !registerData.password ||
       !registerData.confirmPassword
     ) {
-      Alert.alert("Error", "कृपया सभी आवश्यक फील्ड भरें");
+      Alert.alert("❌ Error", "कृपया सभी आवश्यक fields भरें");
+      return;
+    }
+
+    if (registerData.name.length < 2) {
+      Alert.alert("❌ Error", "Name कम से कम 2 characters का होना चाहिए");
       return;
     }
 
     if (registerData.phone.length !== 10) {
-      Alert.alert("Error", "कृपया वैध मोबाइल नंबर डालें");
+      Alert.alert("❌ Error", "कृपया valid 10 digit mobile number डालें");
       return;
     }
 
-    if (registerData.password !== registerData.confirmPassword) {
-      Alert.alert("Error", "Password match नहीं कर रहा");
+    if (!/^\d+$/.test(registerData.phone)) {
+      Alert.alert("❌ Error", "Mobile number में केवल numbers होने चाहिए");
+      return;
+    }
+
+    if (registerData.email && !registerData.email.includes("@")) {
+      Alert.alert("❌ Error", "कृपया valid email address डालें");
       return;
     }
 
     if (registerData.password.length < 6) {
-      Alert.alert("Error", "Password कम से कम 6 characters का होना चाहिए");
+      Alert.alert("❌ Error", "Password कम से कम 6 characters का होना चाहिए");
+      return;
+    }
+
+    if (registerData.password !== registerData.confirmPassword) {
+      Alert.alert("❌ Password Mismatch", "Password और Confirm Password match नहीं कर रहे");
       return;
     }
 
@@ -129,20 +174,48 @@ export default function AuthScreen({
 
       if (result.success && result.user) {
         const userWithNewFlag = { ...result.user, isNewUser: true };
-        // First close the modal
-        onClose();
-        // Then trigger auth success which should redirect to home
-        setTimeout(() => {
-          onAuthSuccess(userWithNewFlag);
-        }, 100);
-      } else {
+        
+        // Show success message with referral info
+        const successMessage = registerData.referralCode 
+          ? `🎉 Registration Successful!\nWelcome ${registerData.name}!\n\n✅ Account created with referral code\n🎁 You'll get bonus on first deposit!`
+          : `🎉 Registration Successful!\nWelcome ${registerData.name}!\n\n✅ Account created successfully\n🚀 Ready to start playing!`;
+
         Alert.alert(
-          "Error",
-          result.error || "Registration failed. Please try again."
+          "✅ Welcome to Dream11 Pro!",
+          successMessage,
+          [
+            {
+              text: "Start Playing! 🎮",
+              onPress: () => {
+                // First close the modal
+                onClose();
+                // Then trigger auth success which should redirect to home
+                setTimeout(() => {
+                  onAuthSuccess(userWithNewFlag);
+                }, 100);
+              }
+            }
+          ]
         );
+      } else {
+        // Handle specific error messages
+        let errorMessage = result.error || "Registration failed. Please try again.";
+        
+        if (errorMessage.includes("Username already exists")) {
+          errorMessage = "❌ Username पहले से exists करता है!\nकोई और username try करें।";
+        } else if (errorMessage.includes("Mobile number already exists")) {
+          errorMessage = "❌ Mobile number पहले से registered है!\nLogin करें या different number use करें।";
+        } else if (errorMessage.includes("Invalid referral code")) {
+          errorMessage = "❌ Invalid Referral Code!\nReferral code गलत है या exist नहीं करता।";
+        }
+        
+        Alert.alert("❌ Registration Failed", errorMessage);
       }
     } catch (error) {
-      Alert.alert("Error", "Registration failed. Please try again.");
+      Alert.alert(
+        "❌ Network Error", 
+        "Registration failed! कृपया अपना internet connection check करें।"
+      );
     } finally {
       setLoading(false);
     }
