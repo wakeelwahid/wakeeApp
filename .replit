@@ -8,8 +8,16 @@ channel = "stable-25_05"
 run = ["sh", "-c", "node index.js"]
 
 [[ports]]
+localPort = 8000
+externalPort = 8000
+
+[[ports]]
 localPort = 8081
 externalPort = 80
+
+[[ports]]
+localPort = 8082
+externalPort = 3000
 
 [workflows]
 runButton = "Django Backend"
