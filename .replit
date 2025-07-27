@@ -8,6 +8,10 @@ channel = "stable-25_05"
 run = ["sh", "-c", "node index.js"]
 
 [[ports]]
+localPort = 5000
+externalPort = 5000
+
+[[ports]]
 localPort = 8000
 externalPort = 8000
 
@@ -20,7 +24,7 @@ localPort = 8082
 externalPort = 3000
 
 [workflows]
-runButton = "Django Backend"
+runButton = "Full Stack App"
 
 [[workflows.workflow]]
 name = "Django Backend"
@@ -29,12 +33,25 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd backend && python manage.py runserver 0.0.0.0:8000"
+args = "cd backend && python manage.py runserver 0.0.0.0:5000"
 
 [[workflows.workflow]]
 name = "Frontend React"
 author = 42802080
 mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd frontend && npm start"
+
+[[workflows.workflow]]
+name = "Full Stack App"
+author = 42802080
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd backend && python manage.py runserver 0.0.0.0:5000"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
