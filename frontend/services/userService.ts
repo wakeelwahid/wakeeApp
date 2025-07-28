@@ -1,5 +1,4 @@
 import { ApiResponse } from "./apiService";
-
 export interface UserProfile {
   id: string;
   name: string;
@@ -10,12 +9,10 @@ export interface UserProfile {
   createdAt: string;
   updatedAt: string;
 }
-
 export interface LoginCredentials {
   phone: string;
   password: string;
 }
-
 export interface RegisterData {
   name: string;
   phone: string;
@@ -23,15 +20,14 @@ export interface RegisterData {
   password: string;
   referralCode?: string;
 }
-
 class UserService {
   // Use your backend API base URL directly for local/dev
-  private baseUrl = "https://a7076cf2-2cac-4495-86e4-7644ab38a51c-00-34az9cfua5zkt.pike.replit.dev:5000";
-
+  private baseUrl =
+    "https://a7076cf2-2cac-4495-86e4-7644ab38a51c-00-34az9cfua5zkt.pike.replit.dev:8000";
   private async makeRequest<T>(
     endpoint: string,
     method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
-    body?: any
+    body?: any,
   ): Promise<ApiResponse<T>> {
     try {
       const headers: Record<string, string> = {
@@ -39,7 +35,6 @@ class UserService {
       };
       const token = await this.getToken();
       if (token) headers["Authorization"] = `Bearer ${token}`;
-
       const config: RequestInit = {
         method,
         headers,
@@ -69,7 +64,6 @@ class UserService {
       };
     }
   }
-
   private async getToken(): Promise<string> {
     // Try AsyncStorage (React Native), then localStorage (web)
     try {
@@ -93,7 +87,6 @@ class UserService {
       return "";
     }
   }
-
   private async setToken(token: string): Promise<void> {
     try {
       if (typeof window !== "undefined" && window.localStorage) {
@@ -111,12 +104,10 @@ class UserService {
       console.error("Error setting token:", error);
     }
   }
-
   // Authentication APIs
   async login(
-    credentials: LoginCredentials & { mobile?: string }
+    credentials: LoginCredentials & { mobile?: string },
   ): Promise<ApiResponse<{ user: UserProfile; token: string }>> {
-    // Django expects 'mobile' and 'password' keys
     const payload = {
       mobile: credentials.phone || credentials.mobile,
       password: credentials.password,
@@ -124,28 +115,17 @@ class UserService {
     const result = await this.makeRequest<{ user: UserProfile; token: string }>(
       "/api/login/",
       "POST",
-      payload
+      payload,
     );
     if (result.success && result.data) {
-      await this.setToken(result.data.token);
-      // Store user data for later use
-      if (typeof window !== "undefined" && window.localStorage) {
-        localStorage.setItem("user_data", JSON.stringify(result.data.user));
-      }
-      if (typeof require !== "undefined") {
-        try {
-          const AsyncStorage =
-            require("@react-native-async-storage/async-storage").default;
-          await AsyncStorage.setItem(
-            "user_data",
-            JSON.stringify(result.data.user)
-          );
-        } catch {}
-      }
+      await this.setToken(result.data.access); // Store the access token
+      localStorage.setItem("user_data", JSON.stringify(result.data.user)); // Store user data
+
+      // Navigate to home page after successful login
+      window.location.href = "/Profile"; // Update path based on your actual home route
     }
     return result;
   }
-
   async register(
     userData: RegisterData & {
       username?: string;
@@ -153,9 +133,8 @@ class UserService {
       confirmPassword?: string;
       confirm_password?: string;
       referral_code?: string;
-    }
+    },
   ): Promise<ApiResponse<{ user: UserProfile; token: string }>> {
-    // Django expects: username, mobile, email, password, confirm_password, referral_code
     const payload = {
       username: userData.name || userData.username,
       mobile: userData.phone || userData.mobile,
@@ -167,35 +146,25 @@ class UserService {
         userData.password,
       referral_code: userData.referralCode || userData.referral_code || "",
     };
-    
-    const result = await this.makeRequest<any>("/api/register/", "POST", payload);
-    
+    const result = await this.makeRequest<any>(
+      "/api/register/",
+      "POST",
+      payload,
+    );
+
     if (result.success && result.data) {
-      // Handle new response format with access token
-      const token = result.data.access || result.data.token;
+      const token = result.data.token; // Ensure your backend returns the token
       const user = result.data.user;
-      
       if (token && user) {
-        await this.setToken(token);
-        // Store user data for later use
-        if (typeof window !== "undefined" && window.localStorage) {
-          localStorage.setItem("user_data", JSON.stringify(user));
-        }
-        if (typeof require !== "undefined") {
-          try {
-            const AsyncStorage =
-              require("@react-native-async-storage/async-storage").default;
-            await AsyncStorage.setItem("user_data", JSON.stringify(user));
-          } catch {}
-        }
-        
-        return {
-          success: true,
-          data: { user, token }
-        };
+        await this.setToken(token); // Store the token
+        localStorage.setItem("user_data", JSON.stringify(user)); // Store user data
       }
+      return {
+        success: true,
+        data: { user, token },
+      };
     }
-    
+
     return result;
   }
 
@@ -203,7 +172,7 @@ class UserService {
     try {
       const result = await this.makeRequest<{ success: boolean }>(
         "/logout",
-        "POST"
+        "POST",
       );
       if (typeof localStorage !== "undefined") {
         localStorage.removeItem("authToken");
@@ -246,7 +215,7 @@ class UserService {
   }
 
   async updateProfile(
-    profileData: Partial<UserProfile>
+    profileData: Partial<UserProfile>,
   ): Promise<ApiResponse<UserProfile>> {
     if (!this.getToken()) {
       return { success: false, error: "Authentication required" };
@@ -256,7 +225,7 @@ class UserService {
 
   async changePassword(
     currentPassword: string,
-    newPassword: string
+    newPassword: string,
   ): Promise<ApiResponse<{ success: boolean }>> {
     if (!this.getToken()) {
       return { success: false, error: "Authentication required" };
@@ -281,7 +250,7 @@ class UserService {
     return this.makeRequest<{ kycId: string; status: string }>(
       "/kyc/submit",
       "POST",
-      kycData
+      kycData,
     );
   }
 
@@ -289,7 +258,7 @@ class UserService {
     ApiResponse<{ status: string; rejectionReason?: string }>
   > {
     return this.makeRequest<{ status: string; rejectionReason?: string }>(
-      "/kyc/status"
+      "/kyc/status",
     );
   }
 
@@ -316,7 +285,7 @@ class UserService {
   > {
     return this.makeRequest<{ referralCode: string }>(
       "/referrals/generate",
-      "POST"
+      "POST",
     );
   }
 }
