@@ -1,19 +1,16 @@
-
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
 interface SecureWrapperProps {
-  isAuthenticated: boolean;
-  user?: any;
-  children: React.ReactNode;
-  onLoginPress: () => void;
-  onClose?: () => void;
-  title?: string;
-  message?: string;
-  icon?: string;
+  isAuthenticated: boolean;  // Prop to determine if the user is authenticated
+  user?: any;  // User information
+  children: React.ReactNode;  // Components to render if authenticated
+  onLoginPress: () => void;  // Function to call when login is triggered
+  onClose?: () => void;  // Optional close function for the popup
+  title?: string;  // Title for the popup
+  message?: string;  // Message for the popup
+  icon?: string;  // Icon for the popup
 }
-
 export default function SecureWrapper({
   isAuthenticated,
   user,
@@ -24,6 +21,7 @@ export default function SecureWrapper({
   message = 'इस feature को access करने के लिए आपको login करना होगा।',
   icon = '🔒'
 }: SecureWrapperProps) {
+  // If user is authenticated, render children directly
   if (!isAuthenticated || !user) {
     return (
       <View style={styles.authRequiredContainer}>
@@ -49,10 +47,9 @@ export default function SecureWrapper({
       </View>
     );
   }
-
+  // Render children when authenticated
   return <>{children}</>;
 }
-
 const styles = StyleSheet.create({
   authRequiredContainer: {
     flex: 1,
