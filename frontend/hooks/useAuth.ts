@@ -9,12 +9,13 @@ export const useAuth = () => {
 
   // Ensure authentication state is properly synchronized
   useEffect(() => {
-    const hasValidUser = user && user.id && user.phone;
+    const hasValidUser = user && (user.id || user.mobile || user.phone) && (user.name || user.username);
     setIsAuthenticated(hasValidUser);
     console.log("Auth state updated:", {
       hasValidUser,
       userId: user?.id,
-      userName: user?.name,
+      userName: user?.name || user?.username,
+      userPhone: user?.phone || user?.mobile,
     });
   }, [user]);
 

@@ -56,9 +56,11 @@ export default function App() {
 
   // Sync authentication states
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && user.id) {
       setIsAuthenticatedState(true);
       setShowAuthRequired(false);
+      setShowAuthModalState(false);
+      console.log('User fully authenticated:', user.username || user.name);
     } else {
       setIsAuthenticatedState(false);
     }
@@ -783,11 +785,14 @@ export default function App() {
     const publicPages = ['home', 'refer', 'terms', 'privacy', 'refund', 'help'];
 
     // Check authentication status properly
-    const isUserAuthenticated = (isAuthenticated && user && user.id) || (isAuthenticatedState && userDataState && userDataState.phone);
+    const isUserAuthenticated = checkAuthentication();
+
+    console.log('Menu item pressed:', key, 'User authenticated:', isUserAuthenticated);
 
     if (!isUserAuthenticated && !publicPages.includes(key)) {
       setShowAuthRequired(true);
       setShowAuthModalState(true);
+      console.log('Showing auth modal for protected route:', key);
       return;
     }
 
@@ -795,6 +800,7 @@ export default function App() {
     if (isUserAuthenticated) {
       setShowAuthRequired(false);
       setShowAuthModalState(false);
+      console.log('User authenticated, allowing access to:', key);
     }
 
     // Allow access to all components
@@ -962,7 +968,7 @@ export default function App() {
 
   const handleAuthSuccess = (userData: any) => {
     // Validate user data before setting
-    if (!userData || !userData.phone) {
+    if (!userData || (!userData.phone && !userData.mobile)) {
       Alert.alert('Error', 'Invalid user data received');
       return;
     }
@@ -972,7 +978,6 @@ export default function App() {
     // Update all auth states for full app access
     setUserDataState(userData);
     setIsAuthenticatedState(true);
-    setUser(userData); // This updates the useAuth hook state
     
     // Immediately close all auth related modals
     setShowAuthRequired(false);
@@ -1017,16 +1022,20 @@ export default function App() {
   };
 
   const checkAuthentication = () => {
-    const isUserAuthenticated = (isAuthenticated && user && user.id) || (isAuthenticatedState && userDataState && userDataState.phone);
+    // Primary check: useAuth hook state
+    const primaryAuth = isAuthenticated && user && user.id;
+    // Fallback check: local state
+    const fallbackAuth = isAuthenticatedState && userDataState && userDataState.phone;
+    
+    const isUserAuthenticated = primaryAuth || fallbackAuth;
     
     // If user is authenticated, ensure auth modals are closed
     if (isUserAuthenticated) {
-      if (showAuthRequired || showAuthModalState) {
-        setShowAuthRequired(false);
-        setShowAuthModalState(false);
-      }
+      setShowAuthRequired(false);
+      setShowAuthModalState(false);
     }
     
+    console.log('Auth check:', { primaryAuth, fallbackAuth, isUserAuthenticated });
     return isUserAuthenticated;
   };
 
@@ -1285,7 +1294,7 @@ export default function App() {
       case 'mybets':
       case 'history':
       case 'bets':
-        const isUserAuthenticated1 = (isAuthenticated && user && user.id) || (isAuthenticatedState && userDataState && userDataState.phone);
+        const isUserAuthenticated1 = checkAuthentication();
         if (!isUserAuthenticated1) {
           return (
             <View style={styles.authRequiredContainer}>
@@ -1310,7 +1319,7 @@ export default function App() {
         }
         return <MyBet placedBets={placedBetsState} />;
       case 'transactions':
-        const isUserAuthenticated2 = (isAuthenticated && user && user.id) || (isAuthenticatedState && userDataState && userDataState.phone);
+        const isUserAuthenticated2 = checkAuthentication();
         if (!isUserAuthenticated2) {
           return (
             <View style={styles.authRequiredContainer}>

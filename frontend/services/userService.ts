@@ -190,7 +190,10 @@ class UserService {
       // Trigger navigation without page refresh
       if (typeof window !== 'undefined' && window.dispatchEvent) {
         window.dispatchEvent(new CustomEvent('authSuccess', { 
-          detail: { navigateTo: 'home' } 
+          detail: { 
+            navigateTo: 'home',
+            userData: result.data.user 
+          } 
         }));
       }
     }
