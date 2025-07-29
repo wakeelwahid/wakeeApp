@@ -669,6 +669,17 @@ export default function App() {
 
     window.addEventListener('authSuccess', handleAuthSuccess);
 
+    // Check if user is already authenticated on app load
+    const checkInitialAuth = () => {
+      const isUserAuthenticated = (isAuthenticated && user && user.id) || (isAuthenticatedState && userDataState && userDataState.phone);
+      if (isUserAuthenticated) {
+        setShowAuthRequired(false);
+        setShowAuthModalState(false);
+      }
+    };
+
+    checkInitialAuth();
+
     return () => {
       window.removeEventListener('authSuccess', handleAuthSuccess);
     };
@@ -747,7 +758,13 @@ export default function App() {
       return;
     }
 
-    // User is authenticated, allow access to all components
+    // If user is authenticated, close any open auth modals and allow access
+    if (isUserAuthenticated) {
+      setShowAuthRequired(false);
+      setShowAuthModalState(false);
+    }
+
+    // Allow access to all components
     setActiveTabLocal(key);
     setActiveTabState(key);
   };
@@ -923,6 +940,8 @@ export default function App() {
     setUserDataState(userData);
     setIsAuthenticatedState(true);
     setUser(userData); // This updates the useAuth hook state
+    
+    // Immediately close all auth related modals
     setShowAuthRequired(false);
     setShowAuthModalState(false);
 
@@ -945,7 +964,7 @@ export default function App() {
           [{ text: 'Continue', style: 'default' }]
         );
       }
-    }, 500);
+    }, 100);
 
     console.log('Authentication completed - user now has full app access');
   };
@@ -965,7 +984,17 @@ export default function App() {
   };
 
   const checkAuthentication = () => {
-    return (isAuthenticated && user && user.id) || (isAuthenticatedState && userDataState && userDataState.phone);
+    const isUserAuthenticated = (isAuthenticated && user && user.id) || (isAuthenticatedState && userDataState && userDataState.phone);
+    
+    // If user is authenticated, ensure auth modals are closed
+    if (isUserAuthenticated) {
+      if (showAuthRequired || showAuthModalState) {
+        setShowAuthRequired(false);
+        setShowAuthModalState(false);
+      }
+    }
+    
+    return isUserAuthenticated;
   };
 
   const handleAddCash = async (amount: number) => {
@@ -1122,7 +1151,10 @@ export default function App() {
               <View style={styles.authRequiredCard}>
                 <TouchableOpacity 
                   style={styles.authRequiredCloseButton} 
-                  onPress={() => setActiveTabLocal('home')}
+                  onPress={() => {
+                    setActiveTabLocal('home');
+                    setActiveTabState('home');
+                  }}
                 >
                   <Ionicons name="close" size={20} color="#999" />
                 </TouchableOpacity>
@@ -1668,7 +1700,16 @@ export default function App() {
       logout();
 
       // Clear all user-related states
+      setUserDataState({
+        name: 'John Doe',
+        phone: '+91 98765 43210',
+        email: 'john@example.com',
+        referralCode: 'REF12345',
+        kycStatus: 'VERIFIED' as 'VERIFIED' | 'PENDING' | 'REJECTED'
+      });
+      setIsAuthenticatedState(false);
       setShowAuthRequired(false);
+      setShowAuthModalState(false);
       setActiveTabLocal('home');
       setActiveTabState('home');
 

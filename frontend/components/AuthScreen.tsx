@@ -87,23 +87,16 @@ export default function AuthScreen({
 
       if (result.success && result.user) {
         // Show success message
-        Alert.alert(
-          "✅ Login Successful!",
-          `Welcome back, ${result.user.username || result.user.name}! 🎉`,
-          [
-            {
-              text: "Continue",
-              onPress: () => {
-                // First close the modal
-                onClose();
-                // Then trigger auth success which should redirect to home
-                setTimeout(() => {
-                  onAuthSuccess(result.user);
-                }, 100);
-              }
-            }
-          ]
-        );
+        // First trigger auth success to update states
+        onAuthSuccess(result.user);
+        
+        // Then show success message without modal interference
+        setTimeout(() => {
+          Alert.alert(
+            "✅ Login Successful!",
+            `Welcome back, ${result.user.username || result.user.name}! 🎉`
+          );
+        }, 200);
       } else {
         // Handle specific error messages
         let errorMessage = result.error || "Login failed. Please try again.";
@@ -180,23 +173,16 @@ export default function AuthScreen({
           ? `🎉 Registration Successful!\nWelcome ${registerData.name}!\n\n✅ Account created with referral code\n🎁 You'll get bonus on first deposit!`
           : `🎉 Registration Successful!\nWelcome ${registerData.name}!\n\n✅ Account created successfully\n🚀 Ready to start playing!`;
 
-        Alert.alert(
-          "✅ Welcome to Dream11 Pro!",
-          successMessage,
-          [
-            {
-              text: "Start Playing! 🎮",
-              onPress: () => {
-                // First close the modal
-                onClose();
-                // Then trigger auth success which should redirect to home
-                setTimeout(() => {
-                  onAuthSuccess(userWithNewFlag);
-                }, 100);
-              }
-            }
-          ]
-        );
+        // First trigger auth success to update states
+        onAuthSuccess(userWithNewFlag);
+        
+        // Then show success message without modal interference
+        setTimeout(() => {
+          Alert.alert(
+            "✅ Welcome to Dream11 Pro!",
+            successMessage
+          );
+        }, 200);
       } else {
         // Handle specific error messages
         let errorMessage = result.error || "Registration failed. Please try again.";
