@@ -667,7 +667,39 @@ export default function App() {
       }
     };
 
+    // Listen for auth logout events (token expired, etc.)
+    const handleAuthLogout = (event: any) => {
+      console.log('Auth logout triggered:', event.detail?.reason);
+      
+      // Clear all user states
+      setUserDataState({
+        name: 'John Doe',
+        phone: '+91 98765 43210',
+        email: 'john@example.com',
+        referralCode: 'REF12345',
+        kycStatus: 'VERIFIED' as 'VERIFIED' | 'PENDING' | 'REJECTED'
+      });
+      setIsAuthenticatedState(false);
+      setShowAuthRequired(false);
+      setShowAuthModalState(false);
+      setActiveTabLocal('home');
+      setActiveTabState('home');
+
+      // Show logout message
+      const reason = event.detail?.reason;
+      if (reason === 'token_expired') {
+        setTimeout(() => {
+          Alert.alert(
+            '⏰ Session Expired',
+            'आपका session expire हो गया है। कृपया फिर से login करें।',
+            [{ text: 'OK', style: 'default' }]
+          );
+        }, 100);
+      }
+    };
+
     window.addEventListener('authSuccess', handleAuthSuccess);
+    window.addEventListener('authLogout', handleAuthLogout);
 
     // Check if user is already authenticated on app load
     const checkInitialAuth = () => {
@@ -682,6 +714,7 @@ export default function App() {
 
     return () => {
       window.removeEventListener('authSuccess', handleAuthSuccess);
+      window.removeEventListener('authLogout', handleAuthLogout);
     };
   }, []);
 

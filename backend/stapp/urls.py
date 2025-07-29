@@ -6,6 +6,7 @@ urlpatterns = [
     # Authentication endpoints
     path('api/register/', register_user, name='register'),
     path('api/login/', login_user, name='login_user'),
+    path('api/logout/', logout_user, name='logout'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 

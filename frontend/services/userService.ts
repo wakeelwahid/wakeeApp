@@ -28,6 +28,7 @@ class UserService {
     endpoint: string,
     method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
     body?: any,
+    retryOnAuthError: boolean = true,
   ): Promise<ApiResponse<T>> {
     try {
       const headers: Record<string, string> = {
@@ -35,6 +36,7 @@ class UserService {
       };
       const token = await this.getToken();
       if (token) headers["Authorization"] = `Bearer ${token}`;
+      
       const config: RequestInit = {
         method,
         headers,
@@ -42,10 +44,30 @@ class UserService {
       if (body && method !== "GET") {
         config.body = JSON.stringify(body);
       }
+      
       const url = endpoint.startsWith("http")
         ? endpoint
         : `${this.baseUrl}${endpoint}`;
       const response = await fetch(url, config);
+      
+      // Handle 401 Unauthorized - token expired
+      if (response.status === 401 && retryOnAuthError) {
+        console.log("Token expired, attempting refresh...");
+        const refreshResult = await this.refreshToken();
+        
+        if (refreshResult.success) {
+          // Retry the original request with new token
+          return this.makeRequest(endpoint, method, body, false);
+        } else {
+          // Refresh failed, clear auth and return error
+          this.clearAuthData();
+          return {
+            success: false,
+            error: "Session expired. Please login again.",
+          };
+        }
+      }
+      
       const data = await response.json();
       if (!response.ok) {
         return {
@@ -71,20 +93,58 @@ class UserService {
         const token =
           localStorage.getItem("auth_token") ||
           localStorage.getItem("authToken");
-        if (token) return token;
+        if (token) {
+          // Validate token before returning
+          if (this.isTokenValid(token)) {
+            return token;
+          } else {
+            // Token is invalid, clear it and trigger logout
+            this.clearAuthData();
+            return "";
+          }
+        }
       }
       if (typeof require !== "undefined") {
         try {
           const AsyncStorage =
             require("@react-native-async-storage/async-storage").default;
           const token = await AsyncStorage.getItem("auth_token");
-          if (token) return token;
+          if (token && this.isTokenValid(token)) {
+            return token;
+          } else if (token) {
+            // Clear invalid token
+            await AsyncStorage.removeItem("auth_token");
+          }
         } catch {}
       }
       return "";
     } catch (error) {
       console.error("Error getting token:", error);
       return "";
+    }
+  }
+
+  private isTokenValid(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      return payload.exp > currentTime;
+    } catch (error) {
+      console.error("Token validation error:", error);
+      return false;
+    }
+  }
+
+  private clearAuthData(): void {
+    if (typeof window !== "undefined" && window.localStorage) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("user_data");
+      
+      // Trigger logout event
+      window.dispatchEvent(new CustomEvent('authLogout', { 
+        detail: { reason: 'token_expired' } 
+      }));
     }
   }
   private async setToken(token: string): Promise<void> {
@@ -119,6 +179,12 @@ class UserService {
     );
     if (result.success && result.data) {
       await this.setToken(result.data.access); // Store the access token
+      
+      // Store refresh token if available
+      if (result.data.refresh) {
+        localStorage.setItem("refresh_token", result.data.refresh);
+      }
+      
       localStorage.setItem("user_data", JSON.stringify(result.data.user)); // Store user data
 
       // Trigger navigation without page refresh
@@ -174,17 +240,54 @@ class UserService {
 
   async logout(): Promise<ApiResponse<{ success: boolean }>> {
     try {
-      const result = await this.makeRequest<{ success: boolean }>(
-        "/logout",
-        "POST",
-      );
-      if (typeof localStorage !== "undefined") {
-        localStorage.removeItem("authToken");
+      // Clear all auth data
+      this.clearAuthData();
+      
+      // Optional: Call backend logout endpoint
+      try {
+        await this.makeRequest<{ success: boolean }>(
+          "/api/logout/",
+          "POST",
+        );
+      } catch (error) {
+        // Continue with logout even if backend call fails
+        console.warn("Backend logout failed:", error);
       }
-      return result;
+      
+      return { success: true, data: { success: true } };
     } catch (error) {
       console.error("Error during logout:", error);
       return { success: false, error: "Logout failed" };
+    }
+  }
+
+  async refreshToken(): Promise<ApiResponse<{ access: string }>> {
+    try {
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (!refreshToken) {
+        return { success: false, error: "No refresh token available" };
+      }
+
+      const response = await fetch(`${this.baseUrl}/api/token/refresh/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
+
+      if (!response.ok) {
+        this.clearAuthData();
+        return { success: false, error: "Token refresh failed" };
+      }
+
+      const data = await response.json();
+      await this.setToken(data.access);
+      
+      return { success: true, data };
+    } catch (error) {
+      this.clearAuthData();
+      return { success: false, error: "Token refresh failed" };
     }
   }
 

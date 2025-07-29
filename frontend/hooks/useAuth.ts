@@ -207,16 +207,35 @@ export const useAuth = () => {
       const authToken = await AsyncStorage.getItem("auth_token");
 
       if (userData && authToken) {
-        const user = JSON.parse(userData);
-        setUser(user);
-        setIsAuthenticated(true);
-        return { success: true, user };
+        // Validate token before accepting it
+        if (isTokenValid(authToken)) {
+          const user = JSON.parse(userData);
+          setUser(user);
+          setIsAuthenticated(true);
+          return { success: true, user };
+        } else {
+          // Token is invalid, clear data
+          await AsyncStorage.multiRemove(["user_data", "auth_token", "refresh_token"]);
+          setUser(null);
+          setIsAuthenticated(false);
+        }
       }
 
       return { success: false };
     } catch (error) {
       console.error("Auth check error:", error);
       return { success: false };
+    }
+  };
+
+  const isTokenValid = (token: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      return payload.exp > currentTime;
+    } catch (error) {
+      console.error("Token validation error:", error);
+      return false;
     }
   };
 
