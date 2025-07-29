@@ -121,8 +121,12 @@ class UserService {
       await this.setToken(result.data.access); // Store the access token
       localStorage.setItem("user_data", JSON.stringify(result.data.user)); // Store user data
 
-      // Navigate to home page after successful login
-      window.location.href = "/"; // Redirect to home dashboard
+      // Trigger navigation without page refresh
+      if (typeof window !== 'undefined' && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('authSuccess', { 
+          detail: { navigateTo: 'home' } 
+        }));
+      }
     }
     return result;
   }

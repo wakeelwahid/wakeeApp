@@ -656,6 +656,22 @@ export default function App() {
   useEffect(() => {
     // Check age verification on app start
     setShowAgeVerificationState(true);
+
+    // Listen for auth success events for smooth navigation
+    const handleAuthSuccess = (event: any) => {
+      if (event.detail?.navigateTo === 'home') {
+        setActiveTabLocal('home');
+        setActiveTabState('home');
+        setShowAuthModalState(false);
+        setShowAuthRequired(false);
+      }
+    };
+
+    window.addEventListener('authSuccess', handleAuthSuccess);
+
+    return () => {
+      window.removeEventListener('authSuccess', handleAuthSuccess);
+    };
   }, []);
 
   const handlePlayNow = (game: any) => {
