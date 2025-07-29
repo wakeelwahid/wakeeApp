@@ -23,7 +23,7 @@ export interface RegisterData {
 class UserService {
   // Use your backend API base URL directly for local/dev
   private baseUrl =
-    "https://a7076cf2-2cac-4495-86e4-7644ab38a51c-00-34az9cfua5zkt.pike.replit.dev:5000";
+    "https://0c5eefa7-e862-4121-8b2a-bae77840c1fc-00-20ced033t5o6m.kirk.replit.dev:5000";
   private async makeRequest<T>(
     endpoint: string,
     method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
