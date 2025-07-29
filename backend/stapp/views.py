@@ -867,7 +867,7 @@ def admin_bet_records(request):
             created_at__lte=prev_close_dt
         ).order_by('created_at')
 
-        prev_bet_list = [bet_to_dict(bet) for prev_bets]
+        prev_bet_list = [bet_to_dict(bet) for bet in prev_bets]
 
         sessions_data.append({
             "type": "previous",
@@ -919,7 +919,7 @@ def admin_bet_records(request):
             created_at__lte=prev_close_dt
         ).order_by('created_at')
 
-        prev_bet_list = [bet_to_dict(bet) for prev_bets]
+        prev_bet_list = [bet_to_dict(bet) for bet in prev_bets]
 
         sessions_data.append({
             "type": "previous",
@@ -1603,7 +1603,7 @@ def admin_dashboard_stats(request):
         total_payouts = bets.filter(is_win=True).aggregate(total=Sum('payout'))['total'] or Decimal('0.00')
         total_commission = ReferralCommission.objects.filter(
             commission_type='bet_commission', created_at__date=day
-        ).aggregate(total=Sum('commission'))['total'] or Decimal('0.00')
+        ).aggregate(total=Sum('commission'))['total'] or Decimal('0.000')
         earning = total_bets - (total_payouts + total_commission)
         earnings_chart_data.append(float(earning))
 
