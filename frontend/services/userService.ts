@@ -122,7 +122,7 @@ class UserService {
       localStorage.setItem("user_data", JSON.stringify(result.data.user)); // Store user data
 
       // Navigate to home page after successful login
-      window.location.href = "/Profile"; // Update path based on your actual home route
+      window.location.href = "/"; // Redirect to home dashboard
     }
     return result;
   }
